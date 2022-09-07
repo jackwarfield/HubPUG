@@ -1,0 +1,53 @@
+{
+  "output": {
+    "targetname" : "Andromeda VII",
+    "wmean"      : "True",
+    "sigmaclip"  : "True"
+  },
+
+  "epoch1": {
+    "origcsv"  : "../epoch1",
+    "csvloc"   : "firstcsv",
+    "fitsloc"  : "../fits/1",
+    "gaia"     : "gaia1",
+    "prefix"   : "j",
+    "expUlim"  : 999999,
+    "expLlim"  : 200,
+    "filt"     : "F555W",
+    "qcut"     : 0.3,
+    "gaiaqcut" : 0.2
+  },
+
+  "epoch2": {
+    "origcsv"  : "../epoch2",
+    "csvloc"   : "secondcsv",
+    "fitsloc"  : "../fits/2",
+    "gaia"     : "gaia2",
+    "prefix"   : "j",
+    "expUlim"  : 999999,
+    "expLlim"  : 200,
+    "filt"     : "F606W",
+    "qcut"     : 0.3,
+    "gaiaqcut" : 0.2
+  },
+
+  "general": {
+    "trimmer"        : "True",
+    "gaiapix"        : 9.99,
+    "gaia_Mcut"      : 22.0,
+    "uppermagcut1"   : 23.0,
+    "uppermagcut2"   : 23.0,
+    "lowermagcut"    : 25.5,
+    "match1_pixsep"  : 10.0,
+    "match2_pixsep"  : 8.0,
+    "match1_Msep"    : 0.3,
+    "match2_Msep"    : 0.3,
+    "match1_radec"   : "True",
+    "match2_radec"   : "False",
+    "thresh"         : 0.95,
+    "gthresh"        : 0.95,
+    "pmtol_start"    : 5.0,
+    "pmtol_end"      : 0.05,
+    "pmtol_speed"    : 2.0
+  }
+}
