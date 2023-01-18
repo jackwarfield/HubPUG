@@ -84,14 +84,14 @@ def main(args):
   df1 = df1.reset_index(drop=True)
   df1['X'] = df1[Xcols].T.median()
   df1['Y'] = df1[Ycols].T.median()
-  df1['X_e'] = (np.abs(df1['X']-df1[Xcols].T)).std()#/np.sqrt(len(Xcols))
-  df1['Y_e'] = (np.abs(df1['Y']-df1[Ycols].T)).std()#/np.sqrt(len(Xcols))
+  df1['X_e'] = (np.abs(df1['X']-df1[Xcols].T)).median()*1.4826
+  df1['Y_e'] = (np.abs(df1['Y']-df1[Ycols].T)).median()*1.4826
   df1 = df1[(df1.X_e < etol) & (df1.Y_e < etol)].reset_index(drop=True)
   df1['gsep'] = df1[scols].T.median()
   df1['r'] = df1[rcols].T.median()
   df1['d'] = df1[dcols].T.median()
-  df1['r_e'] = (np.abs(df1['r']-df1[rcols].T)).std()#/np.sqrt(len(Xcols))
-  df1['d_e'] = (np.abs(df1['d']-df1[dcols].T)).std()#/np.sqrt(len(Xcols))
+  df1['r_e'] = (np.abs(df1['r']-df1[rcols].T)).median()*1.4826
+  df1['d_e'] = (np.abs(df1['d']-df1[dcols].T)).median()*1.4826
   dX1 = df1[Xcols].to_numpy()
   dY1 = df1[Ycols].to_numpy()
   for i in range(len(dX1)):
@@ -120,14 +120,14 @@ def main(args):
   df2 = df2.reset_index(drop=True)
   df2['X'] = df2[Xcols].T.median()
   df2['Y'] = df2[Ycols].T.median()
-  df2['X_e'] = (np.abs(df2['X']-df2[Xcols].T)).std()#/np.sqrt(len(Xcols))
-  df2['Y_e'] = (np.abs(df2['Y']-df2[Ycols].T)).std()#/np.sqrt(len(Xcols))
+  df2['X_e'] = (np.abs(df2['X']-df2[Xcols].T)).median()*1.4826
+  df2['Y_e'] = (np.abs(df2['Y']-df2[Ycols].T)).median()*1.4826
   df2 = df2[(df2.X_e < etol) & (df2.Y_e < etol)].reset_index(drop=True)
   df2['gsep'] = df2[scols].T.median()
   df2['r'] = df2[rcols].T.median()
   df2['d'] = df2[dcols].T.median()
-  df2['r_e'] = (np.abs(df2['r']-df2[rcols].T)).std()#/np.sqrt(len(Xcols))
-  df2['d_e'] = (np.abs(df2['d']-df2[dcols].T)).std()#/np.sqrt(len(Xcols))
+  df2['r_e'] = (np.abs(df2['r']-df2[rcols].T)).median()*1.4826
+  df2['d_e'] = (np.abs(df2['d']-df2[dcols].T)).median()*1.4826
   dX2 = df2[Xcols].to_numpy()
   dY2 = df2[Ycols].to_numpy()
   for i in range(len(dX2)):
