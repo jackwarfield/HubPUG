@@ -163,7 +163,8 @@ for i in range(1,len(dffull)+1):
 
 i = j
 s = 'Individual Reflex Gaia'
-s = 'Individual Gaia\nstellar reflex PMs'
+#s = 'Individual Gaia\nstellar reflex PMs'
+s = 'Target PM estimate\nfrom individual\nsources'
 fs = 14
 fs2 = 17
 ax2.text(1.0, i, s, color=rotorange, ha='right', va='center', fontsize=fs)
