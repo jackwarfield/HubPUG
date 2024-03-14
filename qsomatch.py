@@ -38,7 +38,7 @@ for fn in fn1:
         & (np.abs(qso.dec - dave) < 1)
     ].reset_index(drop=True)
 
-    df['qso'] = np.nan
+    df['qso'] = np.full(len(df), np.nan, dtype='<U20')
     df['msep'] = np.nan
 
     for i in qso.index:
