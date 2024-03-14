@@ -109,7 +109,7 @@ def main(args):
     csv1 = sortreduce(fpath, 'M')
     for fn, f1, d1 in zip(csv1, fits1, date1):
         df = pt.full_process(fn, f1)
-        inmag = df.M.values
+        inmag = df.M.to_numpy(copy=True)
         Vmag = tu.calc_vega(inmag, config.epoch1.filt, d1)
         df['Vega_M'] = Vmag
         _ = df.to_csv(fn, index=False)
@@ -130,7 +130,7 @@ def main(args):
     csv2 = sortreduce(fpath, 'M')
     for fn, f2, d2 in zip(csv2, fits2, date2):
         df = pt.full_process(fn, f2)
-        inmag = df.M.values
+        inmag = df.M.to_numpy(copy=True)
         Vmag = tu.calc_vega(inmag, config.epoch2.filt, d2)
         df['Vega_M'] = Vmag
         _ = df.to_csv(fn, index=False)
@@ -262,14 +262,14 @@ def main(args):
         ref_m = ref_m.head(1000)
         wgts = np.ones(len(ref_m))
         mch_new, all_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            df.X.values,
-            df.Y.values,
+            df.X.to_numpy(copy=True),
+            df.Y.to_numpy(copy=True),
         )
         ref_m['new_X'] = mch_new[:, 0]
         ref_m['new_Y'] = mch_new[:, 1]
@@ -286,14 +286,14 @@ def main(args):
 
         g = pd.read_csv(gfns[i])
         _, g_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            g.X.values,
-            g.Y.values,
+            g.X.to_numpy(copy=True),
+            g.Y.to_numpy(copy=True),
         )
         g['X'] = g_new[:, 0]
         g['Y'] = g_new[:, 1]
@@ -301,14 +301,14 @@ def main(args):
         print(f'\t\t{gfns[i]}')
         q = pd.read_csv(qfns[i])
         _, q_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            q.X.values,
-            q.Y.values,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
         )
         q['X'] = q_new[:, 0]
         q['Y'] = q_new[:, 1]
@@ -327,12 +327,12 @@ def main(args):
     ref = ref[(ref.Vega_M > Mlim_u) & (ref.Vega_M < Mlim_l)]
     ref = ref.reset_index(drop=True)
     smp = pd.DataFrame()
-    smp['r_id'] = ref.id.values
-    smp['r_X'] = ref.X.values
-    smp['r_Y'] = ref.Y.values
-    smp['r_M'] = ref.Vega_M.values
-    smp['r_r'] = ref.r.values
-    smp['r_d'] = ref.d.values
+    smp['r_id'] = ref.id.to_numpy(copy=True)
+    smp['r_X'] = ref.X.to_numpy(copy=True)
+    smp['r_Y'] = ref.Y.to_numpy(copy=True)
+    smp['r_M'] = ref.Vega_M.to_numpy(copy=True)
+    smp['r_r'] = ref.r.to_numpy(copy=True)
+    smp['r_d'] = ref.d.to_numpy(copy=True)
 
     for i, (fn, nfn) in enumerate(zip(othercsv, ocsv_match)):
         print(f'\tFile:\t{fn}   ', end='\r')
@@ -404,15 +404,15 @@ def main(args):
         #              (ref_m.Y-ref_m.new_Y)**2)**0.5
         # ref.to_csv("./lookatthis.csv")
 
-        smp[f'm_id{i+1}'] = ref.match_id.values
-        smp[f'm_X{i+1}'] = ref.match_X.values
-        smp[f'm_Y{i+1}'] = ref.match_Y.values
-        smp[f'm_r{i+1}'] = ref.match_r.values
-        smp[f'm_d{i+1}'] = ref.match_d.values
-        smp[f'm_M{i+1}'] = ref.match_Vega_M.values
-        smp[f'm_lX{i+1}'] = ref.last_X.values
-        smp[f'm_lY{i+1}'] = ref.last_Y.values
-        smp[f'm_sep{i+1}'] = ref.sep.values
+        smp[f'm_id{i+1}'] = ref.match_id.to_numpy(copy=True)
+        smp[f'm_X{i+1}'] = ref.match_X.to_numpy(copy=True)
+        smp[f'm_Y{i+1}'] = ref.match_Y.to_numpy(copy=True)
+        smp[f'm_r{i+1}'] = ref.match_r.to_numpy(copy=True)
+        smp[f'm_d{i+1}'] = ref.match_d.to_numpy(copy=True)
+        smp[f'm_M{i+1}'] = ref.match_Vega_M.to_numpy(copy=True)
+        smp[f'm_lX{i+1}'] = ref.last_X.to_numpy(copy=True)
+        smp[f'm_lY{i+1}'] = ref.last_Y.to_numpy(copy=True)
+        smp[f'm_sep{i+1}'] = ref.sep.to_numpy(copy=True)
 
     ### make sure a star is seen in a number of images corresponding to thresh
     thresh = config.general.thresh
@@ -454,24 +454,24 @@ def main(args):
 
         # try statement here, maybe
         smpc_new, all_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            df.X.values,
-            df.Y.values,
+            df.X.to_numpy(copy=True),
+            df.Y.to_numpy(copy=True),
         )
         _, smpcut_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            smp_cut[f'm_X{i+1}'].values,
-            smp_cut[f'm_Y{i+1}'].values,
+            smp_cut[f'm_X{i+1}'].to_numpy(copy=True),
+            smp_cut[f'm_Y{i+1}'].to_numpy(copy=True),
         )
         smp_c['new_X'] = smpc_new[:, 0]
         smp_c['new_Y'] = smpc_new[:, 1]
@@ -495,14 +495,14 @@ def main(args):
 
         g = pd.read_csv(gfns[i])
         _, g_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            g.X.values,
-            g.Y.values,
+            g.X.to_numpy(copy=True),
+            g.Y.to_numpy(copy=True),
         )
         g['X'] = g_new[:, 0]
         g['Y'] = g_new[:, 1]
@@ -510,14 +510,14 @@ def main(args):
 
         q = pd.read_csv(qfns[i])
         _, q_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            q.X.values,
-            q.Y.values,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
         )
         q['X'] = q_new[:, 0]
         q['Y'] = q_new[:, 1]
@@ -586,24 +586,24 @@ def main(args):
             wgts = np.ones(len(smp_c))
 
             smpc_new, all_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                df.X.values,
-                df.Y.values,
+                df.X.to_numpy(copy=True),
+                df.Y.to_numpy(copy=True),
             )
             _, smpcut_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                smp_cut[f'm_X{i+1}'].values,
-                smp_cut[f'm_Y{i+1}'].values,
+                smp_cut[f'm_X{i+1}'].to_numpy(copy=True),
+                smp_cut[f'm_Y{i+1}'].to_numpy(copy=True),
             )
             smp_c['new_X'] = smpc_new[:, 0]
             smp_c['new_Y'] = smpc_new[:, 1]
@@ -627,14 +627,14 @@ def main(args):
 
             g = pd.read_csv(gfns[i])
             _, g_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                g.X.values,
-                g.Y.values,
+                g.X.to_numpy(copy=True),
+                g.Y.to_numpy(copy=True),
             )
             g['X'] = g_new[:, 0]
             g['Y'] = g_new[:, 1]

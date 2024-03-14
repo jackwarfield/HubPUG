@@ -16,7 +16,7 @@ d = {
     'type': data['type'].byteswap().newbyteorder(),
 }
 qso_tot = pd.DataFrame(data=d)
-qso_tot['uid'] = qso_tot.index.values
+qso_tot['uid'] = qso_tot.index.to_numpy(copy=True)
 qso_tot['uid'] = qso_tot.uid.astype(int)
 qso_tot = qso_tot[(qso_tot.R == '-') | (qso_tot.B == '-')].reset_index(
     drop=True
@@ -49,7 +49,7 @@ for fn in fn1:
         df2 = df.sort_values(by='sep')
         df2 = df2[df2.sep < 3 * 5.56e-5]
         if len(df2) > 0:
-            j = df2.index.values[0]
+            j = df2.index.to_numpy(copy=True)[0]
             df.loc[j, 'qso'] = qso.loc[i, 'uid']
             df.loc[j, 'msep'] = df.loc[j, 'sep']
 
@@ -91,7 +91,7 @@ for fn in fn2:
         df2 = df.sort_values(by='sep')
         df2 = df2[df2.sep < 3 * 5.56e-5]
         if len(df2) > 0:
-            j = df2.index.values[0]
+            j = df2.index.to_numpy(copy=True)[0]
             df.loc[j, 'qso'] = qso.loc[i, 'uid']
             df.loc[j, 'msep'] = df.loc[j, 'sep']
 

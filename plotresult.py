@@ -17,7 +17,7 @@ def calcweight(df):
     wmlim = int(l**2 / 8) - 1
     wmlim = 2
     df = df.sort_values(by='dN', ascending=True).reset_index(drop=True)
-    weights = 1 / df.dN_e.values**2
+    weights = 1 / df.dN_e.to_numpy(copy=True) ** 2
     wt = np.sum(weights)
     w, i = 0, -1
     while w < 0.15865:
@@ -25,34 +25,34 @@ def calcweight(df):
     lower = []
     l_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        lower += [df.dN.values[j]]
-        l_e += [df.dN_e.values[j]]
+        lower += [df.dN.to_numpy(copy=True)[j]]
+        l_e += [df.dN_e.to_numpy(copy=True)[j]]
     l_e = 1 / np.array(l_e) ** 2
     lower = np.average(lower, weights=l_e, returned=False)
     while w < 0.5:
         w += weights[(i := i + 1)] / wt
-    waN = df.dN.values[i - 1]
+    waN = df.dN.to_numpy(copy=True)[i - 1]
     waN = []
     waN_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        waN += [df.dN.values[j]]
-        waN_e += [df.dN_e.values[j]]
+        waN += [df.dN.to_numpy(copy=True)[j]]
+        waN_e += [df.dN_e.to_numpy(copy=True)[j]]
     waN_e = 1 / np.array(waN_e) ** 2
     waN = np.average(waN, weights=waN_e, returned=False)
     while w < 0.84135:
         w += weights[(i := i + 1)] / wt
-    upper = df.dN.values[i - 1]
+    upper = df.dN.to_numpy(copy=True)[i - 1]
     upper = []
     u_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        upper += [df.dN.values[j]]
-        u_e += [df.dN_e.values[j]]
+        upper += [df.dN.to_numpy(copy=True)[j]]
+        u_e += [df.dN_e.to_numpy(copy=True)[j]]
     u_e = 1 / np.array(u_e) ** 2
     upper = np.average(upper, weights=u_e, returned=False)
     waN_e = [[(waN - lower) / l], [(upper - waN) / l]]
 
     df = df.sort_values(by='dE', ascending=True).reset_index(drop=True)
-    weights = 1 / df.dE_e.values**2
+    weights = 1 / df.dE_e.to_numpy(copy=True) ** 2
     wt = np.sum(weights)
     w, i = 0, -1
     while w < 0.15865:
@@ -60,28 +60,28 @@ def calcweight(df):
     lower = []
     l_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        lower += [df.dE.values[j]]
-        l_e += [df.dE_e.values[j]]
+        lower += [df.dE.to_numpy(copy=True)[j]]
+        l_e += [df.dE_e.to_numpy(copy=True)[j]]
     l_e = 1 / np.array(l_e) ** 2
     lower = np.average(lower, weights=l_e, returned=False)
     while w < 0.5:
         w += weights[(i := i + 1)] / wt
-    waE = df.dE.values[i - 1]
+    waE = df.dE.to_numpy(copy=True)[i - 1]
     waE = []
     waE_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        waE += [df.dE.values[j]]
-        waE_e += [df.dE_e.values[j]]
+        waE += [df.dE.to_numpy(copy=True)[j]]
+        waE_e += [df.dE_e.to_numpy(copy=True)[j]]
     waE_e = 1 / np.array(waE_e) ** 2
     waE = np.average(waE, weights=waE_e, returned=False)
     while w < 0.84135:
         w += weights[(i := i + 1)] / wt
-    upper = df.dE.values[i - 1]
+    upper = df.dE.to_numpy(copy=True)[i - 1]
     upper = []
     u_e = []
     for j in range(i - wmlim, i + wmlim + 1):
-        upper += [df.dE.values[j]]
-        u_e += [df.dE_e.values[j]]
+        upper += [df.dE.to_numpy(copy=True)[j]]
+        u_e += [df.dE_e.to_numpy(copy=True)[j]]
     u_e = 1 / np.array(u_e) ** 2
     upper = np.average(upper, weights=u_e, returned=False)
     waE_e = [[(waE - lower) / l], [(upper - waE) / l]]
@@ -93,17 +93,21 @@ def calcweight(df):
 
 def calcweight2(df):
     l = len(df)
-    weights = 1 / df.dN_e.values**2
-    waN, ws = np.average(df.dN.values, weights=weights, returned=True)
+    weights = 1 / df.dN_e.to_numpy(copy=True) ** 2
+    waN, ws = np.average(
+        df.dN.to_numpy(copy=True), weights=weights, returned=True
+    )
     waN_e = 0
-    for w, e in zip(weights, df.dN_e.values):
+    for w, e in zip(weights, df.dN_e.to_numpy(copy=True)):
         waN_e += (w * e / ws) ** 2
     waN_e = np.sqrt(waN_e)
     waN_e = [[waN_e], [waN_e]]
-    weights = 1 / df.dE_e.values**2
-    waE, ws = np.average(df.dE.values, weights=weights, returned=True)
+    weights = 1 / df.dE_e.to_numpy(copy=True) ** 2
+    waE, ws = np.average(
+        df.dE.to_numpy(copy=True), weights=weights, returned=True
+    )
     waE_e = 0
-    for w, e in zip(weights, df.dE_e.values):
+    for w, e in zip(weights, df.dE_e.to_numpy(copy=True)):
         waE_e += (w * e / ws) ** 2
     waE_e = np.sqrt(waE_e)
     waE_e = [[waE_e], [waE_e]]
@@ -139,7 +143,7 @@ if eval(config.output.sigmaclip):
     df = df[(np.abs(df.dN - waN) < 3.0 * df.dN_e)]
     df = df[(np.abs(df.dE - waE) < 3.0 * df.dE_e)]
     waN, waN_e, waE, waE_e = calcweight(df.copy())
-keep = df.index.values
+keep = df.index.to_numpy(copy=True)
 
 print('mu_alpha: ', waE, waE_e)
 print('mu_delta: ', waN, waN_e)
@@ -154,8 +158,8 @@ fig.subplots_adjust(wspace=0.0)
 j = 0
 for i in range(1, len(dffull) + 1):
     j += 0.25
-    dN, dNe = dffull.loc[i - 1][['dN', 'dN_e']].values
-    dE, dEe = dffull.loc[i - 1][['dE', 'dE_e']].values
+    dN, dNe = dffull.loc[i - 1][['dN', 'dN_e']].to_numpy(copy=True)
+    dE, dEe = dffull.loc[i - 1][['dE', 'dE_e']].to_numpy(copy=True)
     if dffull.loc[i - 1, 'q_e2'] == 0:
         mkr = 'x'
     else:

@@ -13,7 +13,7 @@ trimpix = config.general.gaiapix
 def gaiacut(df, gdf):
     for i in range(len(gdf)):
         row = gdf.loc[i]
-        x, y = row[['X', 'Y']].values
+        x, y = row[['X', 'Y']].to_numpy(copy=True)
         df['sep'] = np.sqrt((x - df.X) ** 2 + (y - df.Y) ** 2)
         df = df[df.sep > trimpix]
     return df.reset_index(drop=True)
@@ -27,7 +27,7 @@ print('trimmer.py')
 #    (dp.F606W_ROUND<3)].reset_index(drop=True)
 # dp = dp[(dp.F814W_SNR>4) & (dp.F814W_CROWD<0.75) & (dp.F814W_SHARP**2<0.21) &\
 #    (dp.F814W_ROUND<3)].reset_index(drop=True)
-# td = looppart(dp.X.values, dp.Y.values, dp.index.values)
+# td = looppart(dp.X.to_numpy(copy=True), dp.Y.to_numpy(copy=True), dp.index.to_numpy(copy=True))
 # dp = dp.drop(index=td).reset_index(drop=True)
 
 print('first')

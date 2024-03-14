@@ -106,16 +106,20 @@ class gaia_pm:
 
     def calcweight(self):
         df = self.g.copy()
-        weights = 1 / df.dN_e.values**2
-        waN, ws = np.average(df.dN.values, weights=weights, returned=True)
+        weights = 1 / df.dN_e.to_numpy(copy=True) ** 2
+        waN, ws = np.average(
+            df.dN.to_numpy(copy=True), weights=weights, returned=True
+        )
         waN_e = 0
-        for w, e in zip(weights, df.dN_e.values):
+        for w, e in zip(weights, df.dN_e.to_numpy(copy=True)):
             waN_e += (w * e / ws) ** 2
         waN_e = waN_e**0.5
-        weights = 1 / df.dE_e.values**2
-        waE, ws = np.average(df.dE.values, weights=weights, returned=True)
+        weights = 1 / df.dE_e.to_numpy(copy=True) ** 2
+        waE, ws = np.average(
+            df.dE.to_numpy(copy=True), weights=weights, returned=True
+        )
         waE_e = 0
-        for w, e in zip(weights, df.dE_e.values):
+        for w, e in zip(weights, df.dE_e.to_numpy(copy=True)):
             waE_e += (w * e / ws) ** 2
         waE_e = waE_e**0.5
         return -waN, waN_e, -waE, waE_e

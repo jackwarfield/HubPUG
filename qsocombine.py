@@ -101,8 +101,8 @@ def main(args):
     dX1 = df1[Xcols].to_numpy()
     dY1 = df1[Ycols].to_numpy()
     for i in range(len(dX1)):
-        dX1[i] = dX1[i] - df1.X.values[i]
-        dY1[i] = dY1[i] - df1.Y.values[i]
+        dX1[i] = dX1[i] - df1.X.to_numpy(copy=True)[i]
+        dY1[i] = dY1[i] - df1.Y.to_numpy(copy=True)[i]
     dX1 = [str(tuple(row)) for row in dX1]
     dY1 = [str(tuple(row)) for row in dY1]
     df1['dX1'] = dX1
@@ -134,8 +134,8 @@ def main(args):
     dX2 = df2[Xcols].to_numpy()
     dY2 = df2[Ycols].to_numpy()
     for i in range(len(dX2)):
-        dX2[i] = dX2[i] - df2.X.values[i]
-        dY2[i] = dY2[i] - df2.Y.values[i]
+        dX2[i] = dX2[i] - df2.X.to_numpy(copy=True)[i]
+        dY2[i] = dY2[i] - df2.Y.to_numpy(copy=True)[i]
     dX2 = [str(tuple(row)) for row in dX2]
     dY2 = [str(tuple(row)) for row in dY2]
     df2['dX2'] = dX2
@@ -144,8 +144,8 @@ def main(args):
     _ = df2.to_csv('output/qe2_full.csv', index=False)
 
     df = pd.merge(df1_f, df2_f, how='inner', on='des', suffixes=('_e1', '_e2'))
-    # df['rp'] = correlate(df.dX1.values, df.dX2.values,
-    #                     df.dY1.values, df.dY2.values)
+    # df['rp'] = correlate(df.dX1.to_numpy(copy=True), df.dX2.to_numpy(copy=True),
+    #                     df.dY1.to_numpy(copy=True), df.dY2.to_numpy(copy=True))
     df['rp'] = 0
 
     g_e2_cols = [
@@ -205,7 +205,7 @@ def main(args):
     #              how="left", left_on="des", right_on="designation",
     #              suffixes=(None,"_fg"))
     df = pd.concat([df, g])
-    # df['bjdist'] = bjd.main(1.2, df.parallax.values, df.parallax_error.values)
+    # df['bjdist'] = bjd.main(1.2, df.parallax.to_numpy(copy=True), df.parallax_error.to_numpy(copy=True))
 
     _ = df.to_csv('output/allgaia_list.csv', index=False)
     return df
