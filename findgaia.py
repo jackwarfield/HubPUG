@@ -118,7 +118,7 @@ def main(args):
         df = dfs_1[i].copy()
         df = df[df.M < Mcut - zpt1].reset_index(drop=True)
         df = df[df.q < gq1].reset_index(drop=True)
-        df['des'] = np.full(len(df), np.nan)
+        df['des'] = np.full(len(df), np.nan, dtype='<U50')
         df['gr'] = np.full(len(df), np.nan)
         df['gd'] = np.full(len(df), np.nan)
         df['gpmr'] = np.full(len(df), np.nan)
@@ -161,7 +161,7 @@ def main(args):
 
         df['gr'] = df['gr_e1']
         df['gd'] = df['gd_e1']
-        df = df[df.des.notna()].reset_index(drop=True)
+        df = df[df.gpmr_e.notna()].reset_index(drop=True)
         df = df.sort_values(by='m')
         df = df.drop_duplicates(keep='first').reset_index(drop=True)
         dfs_1[i] = df
@@ -173,7 +173,7 @@ def main(args):
         df = dfs_2[i].copy()
         df = df[df.M < Mcut - zpt2].reset_index(drop=True)
         df = df[df.q < gq2].reset_index(drop=True)
-        df['des'] = np.full(len(df), np.nan)
+        df['des'] = np.full(len(df), np.nan, dtype='<U50')
         df['gr'] = np.full(len(df), np.nan)
         df['gd'] = np.full(len(df), np.nan)
         df['gpmr'] = np.full(len(df), np.nan)
@@ -216,7 +216,7 @@ def main(args):
 
         df['gr'] = df['gr_e2']
         df['gd'] = df['gd_e2']
-        df = df[df.des.notna()].reset_index(drop=True)
+        df = df[df.gpmr_e.notna()].reset_index(drop=True)
         df = df.sort_values(by='m')
         df = df.drop_duplicates(keep='first').reset_index(drop=True)
         dfs_2[i] = df
