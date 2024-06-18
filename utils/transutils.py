@@ -1,3 +1,4 @@
+import os
 import pickle
 import sys
 
@@ -35,15 +36,32 @@ def cmd_cut(df, matchfn, low, high, exp):
     return mask
 
 
+filtfn = 'output/saved_zpts.csv'
+if os.path.exists(filtfn):
+    svdzpts = pd.read_csv(filtfn)
+else:
+    svdzpts = pd.DataFrame(columns=['acsquery', 'zpt'])
+
+
 def get_zpt(filt, date, detector='WFC'):
     """
     Run a query given the filter, date, and detector for an image, and
     return the corresponding magnitude zeropoint.
     """
     print(filt)
-    q = acszpt.Query(date=date, detector=detector, filt=filt)
-    filt_zpt = q.fetch()
-    return filt_zpt['VEGAmag'][0].value
+    if len(svdzpts[svdzpts.acsquery == f'{date}{filt}']) > 0:
+        return svdzpts.loc[
+            svdzpts['acsquery'] == f'{date}{filt}', 'zpt'
+        ].values[0]
+    else:
+        q = acszpt.Query(date=date, detector=detector, filt=filt)
+        filt_zpt = q.fetch()
+        svdzpts.loc[len(svdzpts)] = [
+            f'{date}{filt}',
+            filt_zpt['VEGAmag'][0].value,
+        ]
+        svdzpts.to_csv(filtfn, index=False)
+        return filt_zpt['VEGAmag'][0].value
 
 
 with open('utils/555adjust.sav', 'rb') as f:
