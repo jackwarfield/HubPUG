@@ -8,7 +8,7 @@ def load_fits_params(filename):
     a1, a2, ang = (
         temp_fits[0].header['POSTARG1'],
         temp_fits[0].header['POSTARG2'],
-        temp_fits[1].header['PA_APER'],
+        temp_fits[1].header['ORIENTAT'],
     )
     temp_fits.close()
 
