@@ -101,6 +101,13 @@ def main(args):
     fits2 = np.array(fits2)
     csv2 = np.array(csv2)
 
+    full1 = np.array(
+        [s.replace(config.epoch1.csvloc, config.epoch1.fullloc) for s in csv1]
+    )
+    full2 = np.array(
+        [s.replace(config.epoch2.csvloc, config.epoch2.fullloc) for s in csv2]
+    )
+
     ### Create sorted and reduced version of the tables, then convert
     ### magnitudes to their respective Vega magnitudes.
     ### Apply the rotation so that y->N, x->W
@@ -124,7 +131,7 @@ def main(args):
     for fn, f1, d1 in zip(csv1, fits1, date1):
         if iflag1:
             df = pt.full_process(fn, f1)
-            inmag = df.M.values
+            inmag = df.M.to_numpy(copy=True)
             Vmag = tu.calc_vega(inmag, config.epoch1.filt, d1)
             df['Vega_M'] = Vmag
             _ = df.to_csv(fn, index=False)
@@ -139,9 +146,17 @@ def main(args):
             qfn_ = qfn_.replace('qred.csvsortred.csv', '')
             qdf = pt.full_process(qfn_, f1)
             _ = qdf.to_csv(qfn_, index=False)
+
+            fn = fn.replace(config.epoch1.csvloc, config.epoch1.fullloc)
+            fn = fn.replace('qred.csvsortred.csv', '')
+            df = pt.full_process(fn, f1)
+            inmag = df.M.to_numpy(copy=True)
+            Vmag = tu.calc_vega(inmag, config.epoch1.filt, d1)
+            df['Vega_M'] = Vmag
+            _ = df.to_csv(fn, index=False)
         else:
             df = pd.read_csv(fn)
-            inmag = df.M.values
+            inmag = df.M.to_numpy(copy=True)
             df['Vega_M'] = inmag
             _ = df.to_csv(fn, index=False)
 
@@ -153,7 +168,7 @@ def main(args):
     for fn, f2, d2 in zip(csv2, fits2, date2):
         if iflag2:
             df = pt.full_process(fn, f2)
-            inmag = df.M.values
+            inmag = df.M.to_numpy(copy=True)
             Vmag = tu.calc_vega(inmag, config.epoch2.filt, d2)
             df['Vega_M'] = Vmag
             _ = df.to_csv(fn, index=False)
@@ -168,9 +183,17 @@ def main(args):
             qfn_ = qfn_.replace('qred.csvsortred.csv', '')
             qdf = pt.full_process(qfn_, f2)
             _ = qdf.to_csv(qfn_, index=False)
+
+            fn = fn.replace(config.epoch2.csvloc, config.epoch2.fullloc)
+            fn = fn.replace('qred.csvsortred.csv', '')
+            df = pt.full_process(fn, f2)
+            inmag = df.M.to_numpy(copy=True)
+            Vmag = tu.calc_vega(inmag, config.epoch2.filt, d2)
+            df['Vega_M'] = Vmag
+            _ = df.to_csv(fn, index=False)
         else:
             df = pd.read_csv(fn)
-            inmag = df.M.values
+            inmag = df.M.to_numpy(copy=True)
             df['Vega_M'] = inmag
             _ = df.to_csv(fn, index=False)
 
@@ -213,6 +236,23 @@ def main(args):
     ]
     qfns = [fn.replace('.csvqred.csvsortred', '') for fn in qfns]
     qfns = np.array(qfns)
+
+    ffns = [
+        fn.replace(
+            f'{config.epoch1.csvloc}/{config.epoch1.prefix}',
+            f'{config.epoch1.fullloc}/{config.epoch1.prefix}',
+        )
+        for fn in othercsv
+    ]
+    ffns = [
+        fn.replace(
+            f'{config.epoch2.csvloc}/{config.epoch2.prefix}',
+            f'{config.epoch2.fullloc}/{config.epoch2.prefix}',
+        )
+        for fn in ffns
+    ]
+    ffns = [fn.replace('.csvqred.csvsortred', '') for fn in ffns]
+    ffns = np.array(ffns)
 
     print('Running first match and transformation.')
     goldnum = int(1000)
@@ -266,8 +306,8 @@ def main(args):
             ps *= 1.389e-5
         Ms = config.general.match1_Msep
         mid, mX, mY, mVM, mr, md, _, __ = tu.match_stars(
-            ref.to_numpy(),
-            df_c.to_numpy(),
+            ref.to_numpy(copy=True),
+            df_c.to_numpy(copy=True),
             ps,
             Ms,
             radec=rd,
@@ -289,17 +329,17 @@ def main(args):
             + (ref_m.d - ref_m.match_d) ** 2
         ) ** 0.5
         ref_m = ref_m.sort_values(by='sep').reset_index(drop=True)
-        ref_m = ref_m.head(1000)
+        ref_m = ref_m.head(goldnum)
         wgts = np.ones(len(ref_m))
         mch_new, all_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            df.X.values,
-            df.Y.values,
+            df.X.to_numpy(copy=True),
+            df.Y.to_numpy(copy=True),
         )
         ref_m['new_X'] = mch_new[:, 0]
         ref_m['new_Y'] = mch_new[:, 1]
@@ -316,14 +356,14 @@ def main(args):
 
         g = pd.read_csv(gfns[i])
         _, g_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            g.X.values,
-            g.Y.values,
+            g.X.to_numpy(copy=True),
+            g.Y.to_numpy(copy=True),
         )
         g['X'] = g_new[:, 0]
         g['Y'] = g_new[:, 1]
@@ -331,19 +371,34 @@ def main(args):
         print(f'\t\t{gfns[i]}')
         q = pd.read_csv(qfns[i])
         _, q_new = test_linear(
-            ref_m.match_X.values,
-            ref_m.match_Y.values,
-            ref_m.X.values,
-            ref_m.Y.values,
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            q.X.values,
-            q.Y.values,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
         )
         q['X'] = q_new[:, 0]
         q['Y'] = q_new[:, 1]
         _ = q.to_csv(qfns[i], index=False)
         print(f'\t\t{qfns[i]}')
+        q = pd.read_csv(ffns[i])
+        _, q_new = test_linear(
+            ref_m.match_X.to_numpy(copy=True),
+            ref_m.match_Y.to_numpy(copy=True),
+            ref_m.X.to_numpy(copy=True),
+            ref_m.Y.to_numpy(copy=True),
+            wgts,
+            wgts,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
+        )
+        q['X'] = q_new[:, 0]
+        q['Y'] = q_new[:, 1]
+        _ = q.to_csv(ffns[i], index=False)
+        print(f'\t\t{ffns[i]}')
 
     print('\nRunning second match.')
 
@@ -357,12 +412,12 @@ def main(args):
     ref = ref[(ref.Vega_M > Mlim_u) & (ref.Vega_M < Mlim_l)]
     ref = ref.reset_index(drop=True)
     smp = pd.DataFrame()
-    smp['r_id'] = ref.id.values
-    smp['r_X'] = ref.X.values
-    smp['r_Y'] = ref.Y.values
-    smp['r_M'] = ref.Vega_M.values
-    smp['r_r'] = ref.r.values
-    smp['r_d'] = ref.d.values
+    smp['r_id'] = ref.id.to_numpy(copy=True)
+    smp['r_X'] = ref.X.to_numpy(copy=True)
+    smp['r_Y'] = ref.Y.to_numpy(copy=True)
+    smp['r_M'] = ref.Vega_M.to_numpy(copy=True)
+    smp['r_r'] = ref.r.to_numpy(copy=True)
+    smp['r_d'] = ref.d.to_numpy(copy=True)
 
     for i, (fn, nfn) in enumerate(zip(othercsv, ocsv_match)):
         print(f'\tFile:\t{fn}   ', end='\r')
@@ -410,8 +465,8 @@ def main(args):
             ps *= 1.389e-5
         Ms = config.general.match2_Msep
         mid, mX, mY, mVM, mr, md, lX, lY = tu.match_stars(
-            ref.to_numpy(),
-            df_c.to_numpy(),
+            ref.to_numpy(copy=True),
+            df_c.to_numpy(copy=True),
             ps,
             Ms,
             radec=rd,
@@ -434,15 +489,15 @@ def main(args):
         #              (ref_m.Y-ref_m.new_Y)**2)**0.5
         # ref.to_csv("./lookatthis.csv")
 
-        smp[f'm_id{i+1}'] = ref.match_id.values
-        smp[f'm_X{i+1}'] = ref.match_X.values
-        smp[f'm_Y{i+1}'] = ref.match_Y.values
-        smp[f'm_r{i+1}'] = ref.match_r.values
-        smp[f'm_d{i+1}'] = ref.match_d.values
-        smp[f'm_M{i+1}'] = ref.match_Vega_M.values
-        smp[f'm_lX{i+1}'] = ref.last_X.values
-        smp[f'm_lY{i+1}'] = ref.last_Y.values
-        smp[f'm_sep{i+1}'] = ref.sep.values
+        smp[f'm_id{i+1}'] = ref.match_id.to_numpy(copy=True)
+        smp[f'm_X{i+1}'] = ref.match_X.to_numpy(copy=True)
+        smp[f'm_Y{i+1}'] = ref.match_Y.to_numpy(copy=True)
+        smp[f'm_r{i+1}'] = ref.match_r.to_numpy(copy=True)
+        smp[f'm_d{i+1}'] = ref.match_d.to_numpy(copy=True)
+        smp[f'm_M{i+1}'] = ref.match_Vega_M.to_numpy(copy=True)
+        smp[f'm_lX{i+1}'] = ref.last_X.to_numpy(copy=True)
+        smp[f'm_lY{i+1}'] = ref.last_Y.to_numpy(copy=True)
+        smp[f'm_sep{i+1}'] = ref.sep.to_numpy(copy=True)
 
     ### make sure a star is seen in a number of images corresponding to thresh
     thresh = config.general.thresh
@@ -457,17 +512,17 @@ def main(args):
     ### between images
     pmtol = config.general.pmtol_start
     ss = smp_cut[cols]
-    avestd = ss.T.std().mean()
+    avestd = ss.T.std(axis=0).mean()
     avesep = ss.T.mean().mean()
     for i in range(len(smp_cut)):
-        std = ss.loc[i].std()
+        std = ss.loc[i].std(axis=0)
         objsep = ss.loc[i].mean()
         if (objsep - avesep > pmtol) | (std - avestd > pmtol):
             smp_cut = smp_cut.drop(i, axis=0)
     smp_cut = smp_cut.reset_index(drop=True)
 
     smp_cut = smp_cut.sort_values(by='r_M', ignore_index=True)
-    smp_cut = smp_cut.head(100)
+    # smp_cut = smp_cut.head(100)
 
     print('\nTransforming.')
     for i, (fn, nfn) in enumerate(zip(othercsv, ocsv_match)):
@@ -484,24 +539,24 @@ def main(args):
 
         # try statement here, maybe
         smpc_new, all_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            df.X.values,
-            df.Y.values,
+            df.X.to_numpy(copy=True),
+            df.Y.to_numpy(copy=True),
         )
         _, smpcut_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            smp_cut[f'm_X{i+1}'].values,
-            smp_cut[f'm_Y{i+1}'].values,
+            smp_cut[f'm_X{i+1}'].to_numpy(copy=True),
+            smp_cut[f'm_Y{i+1}'].to_numpy(copy=True),
         )
         smp_c['new_X'] = smpc_new[:, 0]
         smp_c['new_Y'] = smpc_new[:, 1]
@@ -525,14 +580,14 @@ def main(args):
 
         g = pd.read_csv(gfns[i])
         _, g_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            g.X.values,
-            g.Y.values,
+            g.X.to_numpy(copy=True),
+            g.Y.to_numpy(copy=True),
         )
         g['X'] = g_new[:, 0]
         g['Y'] = g_new[:, 1]
@@ -540,18 +595,33 @@ def main(args):
 
         q = pd.read_csv(qfns[i])
         _, q_new = test_linear(
-            smp_c.m_X.values,
-            smp_c.m_Y.values,
-            smp_c.X.values,
-            smp_c.Y.values,
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
             wgts,
             wgts,
-            q.X.values,
-            q.Y.values,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
         )
         q['X'] = q_new[:, 0]
         q['Y'] = q_new[:, 1]
         _ = q.to_csv(qfns[i], index=False)
+
+        q = pd.read_csv(ffns[i])
+        _, q_new = test_linear(
+            smp_c.m_X.to_numpy(copy=True),
+            smp_c.m_Y.to_numpy(copy=True),
+            smp_c.X.to_numpy(copy=True),
+            smp_c.Y.to_numpy(copy=True),
+            wgts,
+            wgts,
+            q.X.to_numpy(copy=True),
+            q.Y.to_numpy(copy=True),
+        )
+        q['X'] = q_new[:, 0]
+        q['Y'] = q_new[:, 1]
+        _ = q.to_csv(ffns[i], index=False)
 
         print(f'-> {avesep:.4f}')
 
@@ -614,26 +684,27 @@ def main(args):
             avesep = smp_c.sep.mean()
             print(f'\t{avesep:.4f} ', end='')
             wgts = np.ones(len(smp_c))
+            wgts = 1 / smp_c.sep
 
             smpc_new, all_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                df.X.values,
-                df.Y.values,
+                df.X.to_numpy(copy=True),
+                df.Y.to_numpy(copy=True),
             )
             _, smpcut_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                smp_cut[f'm_X{i+1}'].values,
-                smp_cut[f'm_Y{i+1}'].values,
+                smp_cut[f'm_X{i+1}'].to_numpy(copy=True),
+                smp_cut[f'm_Y{i+1}'].to_numpy(copy=True),
             )
             smp_c['new_X'] = smpc_new[:, 0]
             smp_c['new_Y'] = smpc_new[:, 1]
@@ -657,14 +728,14 @@ def main(args):
 
             g = pd.read_csv(gfns[i])
             _, g_new = test_linear(
-                smp_c.m_X.values,
-                smp_c.m_Y.values,
-                smp_c.X.values,
-                smp_c.Y.values,
+                smp_c.m_X.to_numpy(copy=True),
+                smp_c.m_Y.to_numpy(copy=True),
+                smp_c.X.to_numpy(copy=True),
+                smp_c.Y.to_numpy(copy=True),
                 wgts,
                 wgts,
-                g.X.values,
-                g.Y.values,
+                g.X.to_numpy(copy=True),
+                g.Y.to_numpy(copy=True),
             )
             g['X'] = g_new[:, 0]
             g['Y'] = g_new[:, 1]

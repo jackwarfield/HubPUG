@@ -1,53 +1,72 @@
 {
   "output": {
-    "targetname" : "Andromeda VII",
+    "targetname" : "Draco II",
     "wmean"      : "True",
-    "sigmaclip"  : "True"
+    "sigmaclip"  : "True",
+    "sigmaval"   : 3.0,
+    "galaxies"   : "True",
+    "gallist"    : "../newgallist.csv"
   },
 
   "epoch1": {
-    "origcsv"  : "../epoch1",
+    "origcsv"  : "../ep1/starcsv1",
+    "fullcsv"  : "../ep1/csvstar",
+    "galcsv"   : "../ep1/csvglxy",
     "csvloc"   : "firstcsv",
-    "fitsloc"  : "../fits/1",
+    "fullloc"  : "firstfull",
+    "fitsloc"  : "../ep1/fits",
     "gaia"     : "gaia1",
     "prefix"   : "j",
     "expUlim"  : 999999,
-    "expLlim"  : 200,
-    "filt"     : "F555W",
+    "expLlim"  : 100,
+    "filt"     : "F814W",
     "qcut"     : 0.3,
-    "gaiaqcut" : 0.2
+    "gaiaqcut" : 0.7,
+    "instr"    : "hst"
   },
 
   "epoch2": {
-    "origcsv"  : "../epoch2",
+    "origcsv"  : "../ep2/starcsv2",
+    "fullcsv"  : "../ep2/csvstar",
+    "galcsv"   : "../ep2/csvglxy",
     "csvloc"   : "secondcsv",
-    "fitsloc"  : "../fits/2",
+    "fullloc"  : "secondfull",
+    "fitsloc"  : "../ep2/fits",
     "gaia"     : "gaia2",
     "prefix"   : "j",
     "expUlim"  : 999999,
-    "expLlim"  : 200,
-    "filt"     : "F606W",
+    "expLlim"  : 100,
+    "filt"     : "F814W",
     "qcut"     : 0.3,
-    "gaiaqcut" : 0.2
+    "gaiaqcut" : 0.7,
+    "instr"    : "hst"
   },
 
   "general": {
-    "trimmer"        : "True",
-    "gaiapix"        : 9.99,
+    "trimmer"        : "False",
+    "fullmatch"      : "False",
+    "gaiapix"        : 20,
     "gaia_Mcut"      : 22.0,
-    "uppermagcut1"   : 23.0,
-    "uppermagcut2"   : 23.0,
-    "lowermagcut"    : 25.5,
-    "match1_pixsep"  : 10.0,
-    "match2_pixsep"  : 8.0,
-    "match1_Msep"    : 0.3,
-    "match2_Msep"    : 0.3,
+    "uppermagcut1"   : 20.0,
+    "uppermagcut2"   : 20.0,
+    "lowermagcut"    : 26.5,
+    "match1_pixsep"  : 5.0,
+    "match2_pixsep"  : 5.0,
+    "match1_Msep"    : 0.05,
+    "match2_Msep"    : 0.05,
     "match1_radec"   : "True",
     "match2_radec"   : "False",
-    "thresh"         : 0.95,
-    "gthresh"        : 0.95,
+    "thresh"         : 0.50,
+    "gthresh"        : 0.50,
+    "qthresh"        : 0.50,
     "pmtol_start"    : 5.0,
-    "pmtol_end"      : 0.05,
+    "pmtol_end"      : 0.1,
     "pmtol_speed"    : 2.0
+  },
+
+  "localcorrections": {
+    "docorr" : "False",
+    "mdiff"  : 1.0,
+    "dist"   : 500
   }
 }

@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from astropy.io import fits
 
+from utils.transutils import instrument_flag
+
 
 class gaia_pm:
     def __init__(self, g_fn, s_fn, fits1_fn, fits2_fn, include_Sat=True):
@@ -60,10 +62,94 @@ class gaia_pm:
         self.g['nogaia_dE'] = np.full(len(self.g), np.nan)
         self.g['nogaia_dE_e'] = np.full(len(self.g), np.nan)
 
+        self.g['lX'] = np.full(len(self.g), np.nan)
+        self.g['lX_e'] = np.full(len(self.g), np.nan)
+        self.g['lY'] = np.full(len(self.g), np.nan)
+        self.g['lY_e'] = np.full(len(self.g), np.nan)
+
+        self.lcdf = pd.read_csv('output/fullmatched_forloc.csv')
+        lcparams = pd.read_json('config.json').localcorrections
+        self.docorr = eval(lcparams.docorr)
+        self.lcm = lcparams.mdiff
+        self.lcd = lcparams.dist
+
+    def get_loc_cor(self, gX1, gY1, gX2, gY2, gM1, gM2, gypix1, star):
+        """
+        Calculate the local PM correction.
+        """
+        s = self.lcdf.copy()
+
+        s['dist'] = np.sqrt((s.x2 - gX2) ** 2 - (s.y2 - gY2) ** 2)
+
+        if gypix1 > 2048:
+            pixcond = s['ypix'] > 2048
+        else:
+            pixcond = s['ypix'] < 2048
+        if star:
+            mcond = s.m2 < -10
+            # mcond = s.m2 > 0
+        else:
+            mcond = np.abs(s.m2 - gM2) < self.lcm
+        s = s[(s['dist'] < self.lcd) & mcond & pixcond]
+
+        l = len(s)
+        if l > 3:
+            i = 0
+            while (i < 10) & (l > 3):
+                weights = 1 / s.dxe.values**2
+                waX, ws = np.average(
+                    s.dx.values, weights=weights, returned=True
+                )
+                waX = s.dx.median()
+                waX_e = 0
+                for w, e in zip(weights, s.dxe.values):
+                    waX_e += (w * e / ws) ** 2
+                waX_e = np.sqrt(waX_e)
+
+                weights = 1 / s.dye.values**2
+                waY, ws = np.average(
+                    s.dy.values, weights=weights, returned=True
+                )
+                waY = s.dy.median()
+                waY_e = 0
+                for w, e in zip(weights, s.dye.values):
+                    waY_e += (w * e / ws) ** 2
+                waY_e = np.sqrt(waY_e)
+
+                q = np.sqrt(
+                    ((s.dx.values - waX) / waX_e) ** 2
+                    + ((s.dy.values - waY) / waY_e) ** 2
+                )
+                keep = q < 3.0 * 1.52
+                i += 1
+                l = len(s[keep])
+                if l > 3:
+                    s = s[keep]
+            lx = waX
+            lx = s.dx.median()
+            lxe = np.sqrt(np.sum(s.dxe.values**2)) / (len(s) * np.sqrt(len(s)))
+            lxe = waX_e
+            ly = waY
+            ly = s.dy.median()
+            lye = np.sqrt(np.sum(s.dye.values**2)) / (len(s) * np.sqrt(len(s)))
+            lye = waY_e
+        else:
+            lx = lxe = ly = lye = np.nan
+            # lx = lxe = ly = lye = 0
+
+        if star * (lx == np.nan):
+            lx = lxe = ly = lye = 0
+
+        if not self.docorr:
+            lx = lxe = ly = lye = 0
+
+        divider = 1
+        return lx / divider, lxe / divider, ly / divider, lye / divider
+
     def single_gaia(self, i):
         """
-        Find the proper motion for a single Gaia star in reference to the mean of
-        the galaxy's star field
+        Find the proper motion for a single Gaia star in reference to the mean
+        of the galaxy's star field
         """
         SCL = self.SCL
         # SCL = 3600/1000
@@ -75,14 +161,25 @@ class gaia_pm:
         g_x1, g_xe1, g_y1, g_ye1 = g[['X_e1', 'X_e_e1', 'Y_e1', 'Y_e_e1']]
         g_x2, g_xe2, g_y2, g_ye2 = g[['X_e2', 'X_e_e2', 'Y_e2', 'Y_e_e2']]
         g_dd, g_dd_e, g_dr, g_dr_e = g[['gdd', 'gdd_e', 'gdr', 'gdr_e']]
-        rp = g['rp']   # Gaia auto-correlation
+        g_m1, g_m2 = g[['M_e1', 'M_e2']]
+        g_ypix1 = g['y_e1']
+        rp = g['rp']  # Gaia auto-correlation
+        if g_dd == g_dr:
+            star = False
+        else:
+            star = True
 
-        dx = (g_x2 - g_x1) * SCL
+        lx, lxe, ly, lye = self.get_loc_cor(
+            g_x1, g_y1, g_x2, g_y2, g_m1, g_m2, g_ypix1, star
+        )
+        # lx = lxe = ly = lye = 0
+
+        dx = (g_x2 - g_x1 - lx) * SCL
         # dx_e = SCL*((g_xe1**2 + g_xe2**2 + rp**2)**0.5 + egx)
-        dx_e = SCL * ((g_xe1**2 + g_xe2**2 + rp**2 + egx**2) ** 0.5)
-        dy = (g_y2 - g_y1) * SCL
+        dx_e = SCL * ((g_xe1**2 + g_xe2**2 + rp**2 + egx**2 + lxe**2) ** 0.5)
+        dy = (g_y2 - g_y1 - ly) * SCL
         # dy_e = SCL*((g_ye1**2 + g_ye2**2 + rp**2)**0.5 + egy)
-        dy_e = SCL * ((g_ye1**2 + g_ye2**2 + rp**2 + egy**2) ** 0.5)
+        dy_e = SCL * ((g_ye1**2 + g_ye2**2 + rp**2 + egy**2 + lye**2) ** 0.5)
 
         dE = -dx
         dN = dy
@@ -104,22 +201,23 @@ class gaia_pm:
         self.g.loc[i, 'dE'] = dEf / bl
         self.g.loc[i, 'dE_e'] = np.abs(dEf_e / bl)
 
+        self.g.loc[i, 'lX'] = lx * 50 / bl
+        self.g.loc[i, 'lX_e'] = np.abs(lxe * 50 / bl)
+        self.g.loc[i, 'lY'] = ly * 50 / bl
+        self.g.loc[i, 'lY_e'] = np.abs(lye * 50 / bl)
+
     def calcweight(self):
         df = self.g.copy()
-        weights = 1 / df.dN_e.to_numpy(copy=True) ** 2
-        waN, ws = np.average(
-            df.dN.to_numpy(copy=True), weights=weights, returned=True
-        )
+        weights = 1 / df.dN_e.values**2
+        waN, ws = np.average(df.dN.values, weights=weights, returned=True)
         waN_e = 0
-        for w, e in zip(weights, df.dN_e.to_numpy(copy=True)):
+        for w, e in zip(weights, df.dN_e.values):
             waN_e += (w * e / ws) ** 2
         waN_e = waN_e**0.5
-        weights = 1 / df.dE_e.to_numpy(copy=True) ** 2
-        waE, ws = np.average(
-            df.dE.to_numpy(copy=True), weights=weights, returned=True
-        )
+        weights = 1 / df.dE_e.values**2
+        waE, ws = np.average(df.dE.values, weights=weights, returned=True)
         waE_e = 0
-        for w, e in zip(weights, df.dE_e.to_numpy(copy=True)):
+        for w, e in zip(weights, df.dE_e.values):
             waE_e += (w * e / ws) ** 2
         waE_e = waE_e**0.5
         return -waN, waN_e, -waE, waE_e
@@ -133,6 +231,7 @@ class gaia_pm:
             _ = self.single_gaia(i)
         self.g = self.g[(self.g.dN.notna()) & (self.g.dE.notna())]
         self.g = self.g.reset_index(drop=True)
+        print(self.g)
         self.dN, self.dN_e, self.dE, self.dE_e = self.calcweight()
         self.allPM = True
 
@@ -157,12 +256,20 @@ class gaia_pm:
 
 def main(args):
     config = pd.read_json(args.config)
+    iflag1 = instrument_flag(config.epoch1.instr)
+    iflag2 = instrument_flag(config.epoch2.instr)
     g_fn = 'output/allgaia_list.csv'
     s_fn = 'output/finalMaT.csv'
-    fits1_fn = f'{config.epoch1.fitsloc}/{config.epoch1.prefix}*fl?.fits'
-    fits1_fn = sorted(glob(fits1_fn))[0]
-    fits2_fn = f'{config.epoch2.fitsloc}/{config.epoch2.prefix}*fl?.fits'
-    fits2_fn = sorted(glob(fits2_fn))[0]
+    if iflag1:
+        fits1_fn = f'{config.epoch1.fitsloc}/{config.epoch1.prefix}*fl?.fits'
+        fits1_fn = sorted(glob(fits1_fn))[0]
+    else:
+        fits1_fn = config.epoch1.fitsloc
+    if iflag2:
+        fits2_fn = f'{config.epoch2.fitsloc}/{config.epoch2.prefix}*fl?.fits'
+        fits2_fn = sorted(glob(fits2_fn))[0]
+    else:
+        fits2_fn = config.epoch2.fitsloc
 
     pmobj = gaia_pm(g_fn, s_fn, fits1_fn, fits2_fn, include_Sat=True)
     _ = pmobj.calcPMs()

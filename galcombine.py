@@ -24,8 +24,8 @@ def main(args):
     config = pd.read_json(args.config)
 
     ### get lists of the Gaia files, read in DataFrames
-    e1 = f'{config.epoch1.gaia}/{config.epoch1.prefix}*flc.csv'
-    e2 = f'{config.epoch2.gaia}/{config.epoch2.prefix}*flc.csv'
+    e1 = f'qso1/{config.epoch1.prefix}*fl?.csv'
+    e2 = f'qso2/{config.epoch2.prefix}*fl?.csv'
     fle1 = sorted(glob(e1))
     fle2 = sorted(glob(e2))
     dfse1 = [pd.read_csv(fn) for fn in fle1]
@@ -35,18 +35,10 @@ def main(args):
     ### any duplicates, keep the star closest to the Gaia star in ra,dec
     for i in range(len(dfse1)):
         df = dfse1[i].copy()
-        df = df[(df.gpmr.notna()) & (df.gpmd.notna())].reset_index(drop=True)
-        cd = np.cos(df.d * np.pi / 180)
-        df['gsep'] = (((df.r - df.gr) * cd) ** 2 + (df.d - df.gd) ** 2) ** 0.5
-        df = df.sort_values(by='gsep', ignore_index=True)
-        # df = df.drop_duplicates(subset='des', keep='first', ignore_index=True)
+        df = df.drop_duplicates(subset='des', keep='first', ignore_index=True)
         dfse1[i] = df
     for i in range(len(dfse2)):
         df = dfse2[i].copy()
-        df = df[(df.gpmr.notna()) & (df.gpmd.notna())].reset_index(drop=True)
-        cd = np.cos(df.d * np.pi / 180)
-        df['gsep'] = (((df.r - df.gr) * cd) ** 2 + (df.d - df.gd) ** 2) ** 0.5
-        df = df.sort_values(by='gsep', ignore_index=True)
         df = df.drop_duplicates(subset='des', keep='first', ignore_index=True)
         dfse2[i] = df
 
@@ -77,59 +69,51 @@ def main(args):
         'd',
         'd_e',
         'des',
-        'gr',
-        'gd',
         'gpmr',
         'gpmr_e',
         'gpmd',
         'gpmd_e',
         'gGmag',
-        'gRPmag',
-        'gBPmag',
-        'gsep',
     ]
 
-    etol = 0.1
-    etol = 0.5
-    etol = 10.0
+    etol = 1e6
+    etol = 1.0
+    # etol = 0.1
 
     Xcols = ['X']
     Ycols = ['Y']
-    scols = ['gsep']
     rcols = ['r']
     dcols = ['d']
     for i in range(1, len(dfse1)):
         Xcols += [f'X{i}']
         Ycols += [f'Y{i}']
-        scols += [f'gsep{i}']
         rcols += [f'r{i}']
         dcols += [f'd{i}']
-    threshf = config.general.gthresh
+    threshf = config.general.qthresh
     thresh = threshf * (len(Xcols) + len(Ycols))
     df1 = df1.dropna(subset=Xcols + Ycols, thresh=thresh)
     df1 = df1.reset_index(drop=True)
     df1['X'] = df1[Xcols].T.mean()
     df1['Y'] = df1[Ycols].T.mean()
-    df1['X_e'] = (
-        (np.abs(df1['X'] - df1[Xcols].T)).median()
-        * 1.4826
-        / np.sqrt(df1[Xcols].T.count() - 1)
-    )
-    df1['Y_e'] = (
-        (np.abs(df1['Y'] - df1[Ycols].T)).median()
-        * 1.4826
-        / np.sqrt(df1[Ycols].T.count() - 1)
-    )
+    # df1['X_e'] = (
+    #    (np.abs(df1['X'] - df1[Xcols].T)).median()
+    #    * 1.4826
+    #    / np.sqrt(df1[Xcols].T.count() - 1)
+    # )
+    # df1['Y_e'] = (
+    #    (np.abs(df1['Y'] - df1[Ycols].T)).median()
+    #    * 1.4826
+    #    / np.sqrt(df1[Ycols].T.count() - 1)
+    # )
     df1['X_e'] = (np.abs(df1['X'] - df1[Xcols].T)).std() / np.sqrt(
-        1 * (df1[Xcols].T.count() - 1)
+        df1[Xcols].T.count() - 1
     )
     df1['Y_e'] = (np.abs(df1['Y'] - df1[Ycols].T)).std() / np.sqrt(
-        1 * (df1[Ycols].T.count() - 1)
+        df1[Ycols].T.count() - 1
     )
     df1 = df1[(df1.X_e < etol) & (df1.Y_e < etol)].reset_index(drop=True)
-    df1['gsep'] = df1[scols].T.median()
-    df1['r'] = df1[rcols].T.median()
-    df1['d'] = df1[dcols].T.median()
+    df1['r'] = df1[rcols].T.mean()
+    df1['d'] = df1[dcols].T.mean()
     df1['r_e'] = (np.abs(df1['r'] - df1[rcols].T)).median() * 1.4826
     df1['d_e'] = (np.abs(df1['d'] - df1[dcols].T)).median() * 1.4826
     dX1 = df1[Xcols].to_numpy()
@@ -142,17 +126,15 @@ def main(args):
     df1['dX1'] = dX1
     df1['dY1'] = dY1
     df1_f = df1[keepcols + ['dX1'] + ['dY1']]
-    _ = df1.to_csv('output/ge1_full.csv', index=False)
+    _ = df1.to_csv('output/qe1_full.csv', index=False)
 
     Xcols = ['X']
     Ycols = ['Y']
-    scols = ['gsep']
     rcols = ['r']
     dcols = ['d']
     for i in range(1, len(dfse2)):
         Xcols += [f'X{i}']
         Ycols += [f'Y{i}']
-        scols += [f'gsep{i}']
         rcols += [f'r{i}']
         dcols += [f'd{i}']
     thresh = threshf * (len(Xcols) + len(Ycols))
@@ -160,26 +142,25 @@ def main(args):
     df2 = df2.reset_index(drop=True)
     df2['X'] = df2[Xcols].T.mean()
     df2['Y'] = df2[Ycols].T.mean()
-    df2['X_e'] = (
-        (np.abs(df2['X'] - df2[Xcols].T)).median()
-        * 1.4826
-        / np.sqrt(df2[Xcols].T.count() - 1)
-    )
-    df2['Y_e'] = (
-        (np.abs(df2['Y'] - df2[Ycols].T)).median()
-        * 1.4826
-        / np.sqrt(df2[Ycols].T.count() - 1)
-    )
+    # df2['X_e'] = (
+    #    (np.abs(df2['X'] - df2[Xcols].T)).median()
+    #    * 1.4826
+    #    / np.sqrt(df2[Xcols].T.count() - 1)
+    # )
+    # df2['Y_e'] = (
+    #    (np.abs(df2['Y'] - df2[Ycols].T)).median()
+    #    * 1.4826
+    #    / np.sqrt(df2[Ycols].T.count() - 1)
+    # )
     df2['X_e'] = (np.abs(df2['X'] - df2[Xcols].T)).std() / np.sqrt(
-        1 * (df2[Xcols].T.count() - 1)
+        df2[Xcols].T.count() - 1
     )
     df2['Y_e'] = (np.abs(df2['Y'] - df2[Ycols].T)).std() / np.sqrt(
-        1 * (df2[Ycols].T.count() - 1)
+        df2[Ycols].T.count() - 1
     )
     df2 = df2[(df2.X_e < etol) & (df2.Y_e < etol)].reset_index(drop=True)
-    df2['gsep'] = df2[scols].T.median()
-    df2['r'] = df2[rcols].T.median()
-    df2['d'] = df2[dcols].T.median()
+    df2['r'] = df2[rcols].T.mean()
+    df2['d'] = df2[dcols].T.mean()
     df2['r_e'] = (np.abs(df2['r'] - df2[rcols].T)).median() * 1.4826
     df2['d_e'] = (np.abs(df2['d'] - df2[dcols].T)).median() * 1.4826
     dX2 = df2[Xcols].to_numpy()
@@ -192,7 +173,7 @@ def main(args):
     df2['dX2'] = dX2
     df2['dY2'] = dY2
     df2_f = df2[keepcols + ['dX2'] + ['dY2']]
-    _ = df2.to_csv('output/ge2_full.csv', index=False)
+    _ = df2.to_csv('output/qe2_full.csv', index=False)
 
     df = pd.merge(df1_f, df2_f, how='inner', on='des', suffixes=('_e1', '_e2'))
     # df['rp'] = correlate(df.dX1.values, df.dX2.values,
@@ -200,16 +181,11 @@ def main(args):
     df['rp'] = 0
 
     g_e2_cols = [
-        'gr_e2',
-        'gd_e2',
         'gpmr_e2',
         'gpmr_e_e2',
         'gpmd_e2',
         'gpmd_e_e2',
         'gGmag_e2',
-        'gRPmag_e2',
-        'gBPmag_e2',
-        'gsep_e2',
     ]
     for cn in g_e2_cols:
         df[cn.replace('_e2', '')] = df[cn]
@@ -244,31 +220,24 @@ def main(args):
         'd_e2',
         'd_e_e2',
         'rp',
-        'gr_e1',
-        'gd_e1',
-        'gr',
-        'gd',
         'gpmr',
         'gpmr_e',
         'gpmd',
         'gpmd_e',
         'gGmag',
-        'gRPmag',
-        'gBPmag',
-        'gsep',
     ]
     df = df[keepcols]
+    df['pmra'] = 0.0
+    df['pmra_error'] = 0.0
+    df['pmdec'] = 0.0
+    df['pmdec_error'] = 0.0
 
-    g = pd.read_csv('output/fullgaiastamp.csv')
-    df = pd.merge(
-        df,
-        g,
-        how='left',
-        left_on='des',
-        right_on='designation',
-        suffixes=(None, '_fg'),
-    )
-    df['bjdist'] = bjd.main(1.2, df.parallax.values, df.parallax_error.values)
+    g = pd.read_csv('output/allgaia_list.csv')
+    # df = pd.merge(df,g,
+    #              how="left", left_on="des", right_on="designation",
+    #              suffixes=(None,"_fg"))
+    df = pd.concat([df, g])
+    # df['bjdist'] = bjd.main(1.2, df.parallax.values, df.parallax_error.values)
 
     _ = df.to_csv('output/allgaia_list.csv', index=False)
     return df

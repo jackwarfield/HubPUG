@@ -7,8 +7,8 @@ import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astroquery.gaia import Gaia
-
 from utils.transutils import get_zpt
+from utils.transutils import instrument_flag
 
 ### use Gaia eDR3
 Gaia.MAIN_GAIA_TABLE = 'gaiaedr3.gaia_source'
@@ -27,6 +27,8 @@ def main(args):
     prefix2 = config.epoch2.prefix
     gq1 = config.epoch1.gaiaqcut
     gq2 = config.epoch2.gaiaqcut
+    iflag1 = instrument_flag(config.epoch1.instr)
+    iflag2 = instrument_flag(config.epoch2.instr)
 
     ### bring in original CSV files as an array, then make an array of pandas DFs
     fns_1 = sorted(glob(f'{csvloc1}/{prefix1}*fl?.csv'))
@@ -34,8 +36,14 @@ def main(args):
     dfs_1 = [pd.read_csv(fn) for fn in fns_1]
     dfs_2 = [pd.read_csv(fn) for fn in fns_2]
     ### fits files
-    fits1 = sorted(glob(f'{fitsloc1}/{prefix1}*fl?.fits'))[0]
-    fits2 = sorted(glob(f'{fitsloc2}/{prefix2}*fl?.fits'))[0]
+    if iflag1:
+        fits1 = sorted(glob(f'{fitsloc1}/{prefix1}*fl?.fits'))[0]
+    else:
+        fits1 = fitsloc1
+    if iflag2:
+        fits2 = sorted(glob(f'{fitsloc2}/{prefix2}*fl?.fits'))[0]
+    else:
+        fits2 = fitsloc2
 
     ### set some general parameters
     t0 = 2016.0
@@ -47,12 +55,19 @@ def main(args):
         d2 = hdu[0].header['date-obs']
     baseline = t2 - t1
     pix = config.general.gaiapix
-    zpt1 = get_zpt(config.epoch1.filt, d1)
-    zpt2 = get_zpt(config.epoch2.filt, d2)
+
+    if iflag1:
+        zpt1 = get_zpt(config.epoch1.filt, d1)
+    else:
+        zpt1 = -2.5 * np.log10(1000.0)
+    if iflag2:
+        zpt2 = get_zpt(config.epoch2.filt, d2)
+    else:
+        zpt2 = -2.5 * np.log10(1000.0)
     print(zpt1, zpt2)
     Mcutraw = config.general.gaia_Mcut
     Mcut = Mcutraw - 2.5 * np.log10(1000.0)
-    width = pix * 1.38889e-5   # degrees
+    width = pix * 1.38889e-5  # degrees
     cols = [
         'designation',
         'ra',
@@ -75,6 +90,9 @@ def main(args):
          SELECT TOP {int(1e6)}
          designation,ra,dec,pmra,pmra_error,pmdec,pmdec_error,phot_g_mean_mag,
          phot_rp_mean_mag,parallax,parallax_error,ruwe,phot_bp_mean_mag,
+         ipd_gof_harmonic_amplitude,
+         visibility_periods_used,
+         astrometric_excess_noise_sig,
          COORD1(
            EPOCH_PROP_POS(ra,dec,parallax,pmra,pmdec,radial_velocity,
                           {t0},{t1})
@@ -97,13 +115,14 @@ def main(args):
            POINT('ICRS',ra,dec),
            CIRCLE('ICRS',{ra},{dec},0.0833333)
            )=1
-         AND ruwe < 1.1
-         AND ipd_gof_harmonic_amplitude <= 0.2
-         AND visibility_periods_used >= 9
-         AND astrometric_excess_noise_sig <= 2
-         AND parallax_error < 0.7
-         """
+        """
+        # AND ruwe < 1.1
+        # AND ipd_gof_harmonic_amplitude <= 0.2
+        # AND visibility_periods_used >= 9
+        # AND astrometric_excess_noise_sig <= 2
+        # """
         # AND pmra_error < 1 AND pmdec_error < 1
+        # AND parallax_error < 0.7
         job = Gaia.launch_job(q)
         g = job.get_results().to_pandas()
         g.columns = [s.lower() for s in g.columns]
@@ -114,11 +133,11 @@ def main(args):
         g = g[g.phot_g_mean_mag < Mcutraw - 1].reset_index(drop=True)
 
     for i in range(len(dfs_1)):
-        print(f'Matching Gaia sources for {fns_1[i]}')
+        print(f'Matching Gaia sources for {fns_1[i]}', end='\t')
         df = dfs_1[i].copy()
         df = df[df.M < Mcut - zpt1].reset_index(drop=True)
         df = df[df.q < gq1].reset_index(drop=True)
-        df['des'] = np.full(len(df), np.nan, dtype='<U50')
+        df['des'] = np.full(len(df), np.nan, dtype='<U30')
         df['gr'] = np.full(len(df), np.nan)
         df['gd'] = np.full(len(df), np.nan)
         df['gpmr'] = np.full(len(df), np.nan)
@@ -161,19 +180,21 @@ def main(args):
 
         df['gr'] = df['gr_e1']
         df['gd'] = df['gd_e1']
-        df = df[df.gpmr_e.notna()].reset_index(drop=True)
-        df = df.sort_values(by='m')
-        df = df.drop_duplicates(keep='first').reset_index(drop=True)
+        df = df[df.des.notna()].reset_index(drop=True)
+        df = df.sort_values(by='M')
+        # df = df.drop_duplicates(keep='first').reset_index(drop=True)
+        df = df.drop_duplicates(keep=False).reset_index(drop=True)
         dfs_1[i] = df
         fn = fns_1[i].replace(csvloc1, gaialoc1)
         _ = df.to_csv(fn, index=False)
+        print(len(df))
 
     for i in range(len(dfs_2)):
-        print(f'Matching Gaia sources for {fns_2[i]}')
+        print(f'Matching Gaia sources for {fns_2[i]}', end='\t')
         df = dfs_2[i].copy()
         df = df[df.M < Mcut - zpt2].reset_index(drop=True)
         df = df[df.q < gq2].reset_index(drop=True)
-        df['des'] = np.full(len(df), np.nan, dtype='<U50')
+        df['des'] = np.full(len(df), np.nan, dtype='<U30')
         df['gr'] = np.full(len(df), np.nan)
         df['gd'] = np.full(len(df), np.nan)
         df['gpmr'] = np.full(len(df), np.nan)
@@ -216,12 +237,14 @@ def main(args):
 
         df['gr'] = df['gr_e2']
         df['gd'] = df['gd_e2']
-        df = df[df.gpmr_e.notna()].reset_index(drop=True)
-        df = df.sort_values(by='m')
-        df = df.drop_duplicates(keep='first').reset_index(drop=True)
+        df = df[df.des.notna()].reset_index(drop=True)
+        df = df.sort_values(by='M')
+        # df = df.drop_duplicates(keep='first').reset_index(drop=True)
+        df = df.drop_duplicates(keep=False).reset_index(drop=True)
         dfs_2[i] = df
         fn = fns_2[i].replace(csvloc2, gaialoc2)
         _ = df.to_csv(fn, index=False)
+        print(len(df))
 
 
 if __name__ == '__main__':

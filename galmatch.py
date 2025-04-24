@@ -4,41 +4,27 @@ import numpy as np
 import pandas as pd
 from astropy.io import fits
 
-with fits.open('./utils/milliquas.fits') as hdu:
-    data = hdu[1].data
+config = pd.read_json('./config.json')
 
-d = {
-    'ra': data['ra'].byteswap().newbyteorder(),
-    'dec': data['dec'].byteswap().newbyteorder(),
-    'name': data['name'].byteswap().newbyteorder(),
-    'R': data['R'].byteswap().newbyteorder(),
-    'B': data['B'].byteswap().newbyteorder(),
-    'type': data['type'].byteswap().newbyteorder(),
-}
-qso_tot = pd.DataFrame(data=d)
-qso_tot['uid'] = qso_tot.index.values
-qso_tot['uid'] = qso_tot.uid.astype(int)
-qso_tot = qso_tot[(qso_tot.R == '-') | (qso_tot.B == '-')].reset_index(
-    drop=True
-)
-# qso_tot = qso_tot[(qso_tot.R != '1000') & (qso_tot.B != '1')].reset_index(drop=True)
-# qso_tot = qso_tot[qso_tot.type == 'Q'].reset_index(drop=True)
+qso_tot = pd.read_csv(config.output.gallist)
 
 fn1 = glob('./firstcsv/*fl?.csv')
 fn2 = glob('./secondcsv/*fl?.csv')
 
+fn1 = glob(f'{config.epoch1.galcsv}/*fl?.csv')
+fn2 = glob(f'{config.epoch2.galcsv}/*fl?.csv')
+
+sepval = 6.94e-5 * 5
+
 for fn in fn1:
     df = pd.read_csv(fn)
-    df = df[df.q < 0.2].reset_index(drop=True)
+    # df = df[df.q > config.epoch1.gaiaqcut].reset_index(drop=True)
+    # df = df[df.q < 0.5].reset_index(drop=True)
     rave = df.r.mean()
     dave = df.d.mean()
     qso = qso_tot
-    qso = qso[
-        (np.abs(qso.ra - rave) * np.cos(np.radians(dave)) < 1)
-        & (np.abs(qso.dec - dave) < 1)
-    ].reset_index(drop=True)
 
-    df['qso'] = np.nan
+    df['qso'] = np.full(len(df), np.nan, dtype='<U50')
     df['msep'] = np.nan
 
     for i in qso.index:
@@ -47,13 +33,11 @@ for fn in fn1:
             (df.r - r) ** 2 * np.cos(np.radians(d)) ** 2 + (df.d - d) ** 2
         )
         df2 = df.sort_values(by='sep')
-        df2 = df2[df2.sep < 3 * 5.56e-5]
+        df2 = df2[df2.sep < sepval]
         if len(df2) > 0:
             j = df2.index.values[0]
             df.loc[j, 'qso'] = qso.loc[i, 'uid']
             df.loc[j, 'msep'] = df.loc[j, 'sep']
-            df.loc[j, 'gr'] = r
-            df.loc[j, 'gd'] = d
 
     df = df[df.qso.notna()].reset_index(drop=True)
     df['des'] = df.qso
@@ -69,11 +53,13 @@ for fn in fn1:
         ]
     )
 
-    df.to_csv(f"./qso1/{fn.replace('firstcsv/','')}", index=False)
+    df.to_csv(
+        f"./qso1/{fn.replace(f'{config.epoch1.galcsv}/','')}", index=False
+    )
 
 for fn in fn2:
     df = pd.read_csv(fn)
-    df = df[df.q < 0.12].reset_index(drop=True)
+    # df = df[df.q > config.epoch2.gaiaqcut].reset_index(drop=True)
     rave = df.r.mean()
     dave = df.d.mean()
     qso = qso_tot
@@ -82,7 +68,7 @@ for fn in fn2:
         & (np.abs(qso.dec - dave) < 1)
     ].reset_index(drop=True)
 
-    df['qso'] = np.nan
+    df['qso'] = np.full(len(df), np.nan, dtype='<U50')
     df['msep'] = np.nan
 
     for i in qso.index:
@@ -91,13 +77,11 @@ for fn in fn2:
             (df.r - r) ** 2 * np.cos(np.radians(d)) ** 2 + (df.d - d) ** 2
         )
         df2 = df.sort_values(by='sep')
-        df2 = df2[df2.sep < 5 * 5.56e-5]
+        df2 = df2[df2.sep < sepval * 3 / 2]
         if len(df2) > 0:
             j = df2.index.values[0]
             df.loc[j, 'qso'] = qso.loc[i, 'uid']
             df.loc[j, 'msep'] = df.loc[j, 'sep']
-            df.loc[j, 'gr'] = r
-            df.loc[j, 'gd'] = d
 
     df = df[df.qso.notna()].reset_index(drop=True)
     df['des'] = df.qso
@@ -113,4 +97,6 @@ for fn in fn2:
         ]
     )
 
-    df.to_csv(f"./qso2/{fn.replace('secondcsv/','')}", index=False)
+    df.to_csv(
+        f"./qso2/{fn.replace(f'{config.epoch2.galcsv}/','')}", index=False
+    )

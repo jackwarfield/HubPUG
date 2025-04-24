@@ -91,18 +91,18 @@ def main(args):
     df1 = df1.reset_index(drop=True)
     df1['X'] = df1[Xcols].T.median()
     df1['Y'] = df1[Ycols].T.median()
-    df1['X_e'] = (np.abs(df1['X'] - df1[Xcols].T)).median()
-    df1['Y_e'] = (np.abs(df1['Y'] - df1[Ycols].T)).median()
+    df1['X_e'] = (np.abs(df1['X'] - df1[Xcols].T)).median() * 1.4826
+    df1['Y_e'] = (np.abs(df1['Y'] - df1[Ycols].T)).median() * 1.4826
     df1 = df1[(df1.X_e < etol) & (df1.Y_e < etol)].reset_index(drop=True)
     df1['r'] = df1[rcols].T.median()
     df1['d'] = df1[dcols].T.median()
-    df1['r_e'] = (np.abs(df1['r'] - df1[rcols].T)).median()
-    df1['d_e'] = (np.abs(df1['d'] - df1[dcols].T)).median()
+    df1['r_e'] = (np.abs(df1['r'] - df1[rcols].T)).median() * 1.4826
+    df1['d_e'] = (np.abs(df1['d'] - df1[dcols].T)).median() * 1.4826
     dX1 = df1[Xcols].to_numpy()
     dY1 = df1[Ycols].to_numpy()
     for i in range(len(dX1)):
-        dX1[i] = dX1[i] - df1.X.to_numpy(copy=True)[i]
-        dY1[i] = dY1[i] - df1.Y.to_numpy(copy=True)[i]
+        dX1[i] = dX1[i] - df1.X.values[i]
+        dY1[i] = dY1[i] - df1.Y.values[i]
     dX1 = [str(tuple(row)) for row in dX1]
     dY1 = [str(tuple(row)) for row in dY1]
     df1['dX1'] = dX1
@@ -124,18 +124,18 @@ def main(args):
     df2 = df2.reset_index(drop=True)
     df2['X'] = df2[Xcols].T.median()
     df2['Y'] = df2[Ycols].T.median()
-    df2['X_e'] = (np.abs(df2['X'] - df2[Xcols].T)).median()
-    df2['Y_e'] = (np.abs(df2['Y'] - df2[Ycols].T)).median()
+    df2['X_e'] = (np.abs(df2['X'] - df2[Xcols].T)).median() * 1.4826
+    df2['Y_e'] = (np.abs(df2['Y'] - df2[Ycols].T)).median() * 1.4826
     df2 = df2[(df2.X_e < etol) & (df2.Y_e < etol)].reset_index(drop=True)
     df2['r'] = df2[rcols].T.median()
     df2['d'] = df2[dcols].T.median()
-    df2['r_e'] = (np.abs(df2['r'] - df2[rcols].T)).median()
-    df2['d_e'] = (np.abs(df2['d'] - df2[dcols].T)).median()
+    df2['r_e'] = (np.abs(df2['r'] - df2[rcols].T)).median() * 1.4826
+    df2['d_e'] = (np.abs(df2['d'] - df2[dcols].T)).median() * 1.4826
     dX2 = df2[Xcols].to_numpy()
     dY2 = df2[Ycols].to_numpy()
     for i in range(len(dX2)):
-        dX2[i] = dX2[i] - df2.X.to_numpy(copy=True)[i]
-        dY2[i] = dY2[i] - df2.Y.to_numpy(copy=True)[i]
+        dX2[i] = dX2[i] - df2.X.values[i]
+        dY2[i] = dY2[i] - df2.Y.values[i]
     dX2 = [str(tuple(row)) for row in dX2]
     dY2 = [str(tuple(row)) for row in dY2]
     df2['dX2'] = dX2
@@ -144,8 +144,8 @@ def main(args):
     _ = df2.to_csv('output/qe2_full.csv', index=False)
 
     df = pd.merge(df1_f, df2_f, how='inner', on='des', suffixes=('_e1', '_e2'))
-    # df['rp'] = correlate(df.dX1.to_numpy(copy=True), df.dX2.to_numpy(copy=True),
-    #                     df.dY1.to_numpy(copy=True), df.dY2.to_numpy(copy=True))
+    # df['rp'] = correlate(df.dX1.values, df.dX2.values,
+    #                     df.dY1.values, df.dY2.values)
     df['rp'] = 0
 
     g_e2_cols = [
@@ -205,7 +205,7 @@ def main(args):
     #              how="left", left_on="des", right_on="designation",
     #              suffixes=(None,"_fg"))
     df = pd.concat([df, g])
-    # df['bjdist'] = bjd.main(1.2, df.parallax.to_numpy(copy=True), df.parallax_error.to_numpy(copy=True))
+    # df['bjdist'] = bjd.main(1.2, df.parallax.values, df.parallax_error.values)
 
     _ = df.to_csv('output/allgaia_list.csv', index=False)
     return df

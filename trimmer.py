@@ -1,5 +1,5 @@
-import glob
 import subprocess
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -10,54 +10,9 @@ qlim2 = config.epoch2.qcut
 trimpix = config.general.gaiapix
 
 
-def gaiacut(df, gdf):
-    for i in range(len(gdf)):
-        row = gdf.loc[i]
-        x, y = row[['X', 'Y']].to_numpy(copy=True)
-        df['sep'] = np.sqrt((x - df.X) ** 2 + (y - df.Y) ** 2)
-        df = df[df.sep > trimpix]
-    return df.reset_index(drop=True)
+fns = sorted(glob('**/*flc.csv'))
 
-
-print('trimmer.py')
-
-# print("cut dolphot cat")
-# dp = pd.read_csv("./ngc147ss.csv",)
-# dp = dp[(dp.F606W_SNR>4) & (dp.F606W_CROWD<0.75) & (dp.F606W_SHARP**2<0.21) &\
-#    (dp.F606W_ROUND<3)].reset_index(drop=True)
-# dp = dp[(dp.F814W_SNR>4) & (dp.F814W_CROWD<0.75) & (dp.F814W_SHARP**2<0.21) &\
-#    (dp.F814W_ROUND<3)].reset_index(drop=True)
-# td = looppart(dp.X.to_numpy(copy=True), dp.Y.to_numpy(copy=True), dp.index.to_numpy(copy=True))
-# dp = dp.drop(index=td).reset_index(drop=True)
-
-print('first')
-fl = sorted(glob.glob('./firstcsv/*fl?.csv'))
-gfl = sorted(glob.glob('./gaia1/*'))
-
-for fn, gfn in zip(fl, gfl):
-    print(fn)
+for fn in fns:
     df = pd.read_csv(fn)
-    df = df[df.q < qlim1].reset_index(drop=True)
-    gdf = pd.read_csv(gfn)
-    df = gaiacut(df.copy(), gdf.copy())
-    df.to_csv(
-        fn,
-        index=False,
-    )
-
-qlim = config.epoch2.qcut
-
-print('second')
-fl = sorted(glob.glob('./secondcsv/*fl?.csv'))
-gfl = sorted(glob.glob('./gaia2/*'))
-
-for fn, gfn in zip(fl, gfl):
-    print(fn)
-    df = pd.read_csv(fn)
-    df = df[df.q < qlim2].reset_index(drop=True)
-    gdf = pd.read_csv(gfn)
-    df = gaiacut(df.copy(), gdf.copy())
-    df.to_csv(
-        fn,
-        index=False,
-    )
+    df = df[df.y < 2048]
+    df.to_csv(fn, index=False)
